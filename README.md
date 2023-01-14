@@ -2,6 +2,8 @@
 
 Finds the 6 lowest time periods from Agile Octopus. Then sets the hybrid inverter to fill the battery from the grid during these times.
 
+Designed to run at around 11:30pm to set up the inverter for the following day.
+
 ## ENV Variables
 
 USERNAME: email address for Growatt
