@@ -1,4 +1,4 @@
-const https = require("https");
+import https from "https";
 
 function lastSunday(month, year) {
   var d = new Date();
@@ -188,7 +188,7 @@ const updateBatteryTime2 = async (tariffs, cookies) => {
   });
 };
 
-const run = async () => {
+export const run = async () => {
   const tariffs = await getTomorrowsTariffs();
   const cheapestTariffs = getCheapestTariffs(tariffs);
   console.log("Cheapest 6 tariffs");
@@ -203,6 +203,5 @@ const run = async () => {
     cheapestTariffs.slice(3, cheapestTariffs.length),
     cookies
   );
+  return cheapestTariffs;
 };
-
-run();
