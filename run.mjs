@@ -1,4 +1,5 @@
 import https from "https";
+import { md5 } from "./md5.mjs";
 
 function lastSunday(month, year) {
   var d = new Date();
@@ -25,6 +26,7 @@ function isBST() {
 }
 
 const makeHttpRequest = (options, jsonResponse = false) => {
+  console.log(options);
   return new Promise((resolve, reject) => {
     const request = https.request(options, (resp) => {
       console.log(options.path, resp.statusCode);
@@ -53,6 +55,7 @@ const makeHttpRequest = (options, jsonResponse = false) => {
 };
 
 const makeHttpRequestForCookies = (options) => {
+  console.log(options);
   return new Promise((resolve, reject) => {
     const request = https.request(options, (resp) => {
       console.log(options.path, resp.statusCode);
@@ -60,8 +63,24 @@ const makeHttpRequestForCookies = (options) => {
       const cookies =
         cookiesArray.map((x) => x.split("; ")[0]).join("; ") + ";";
       resolve(cookies);
+      
+      let data = "";
+
+      // A chunk of data has been received.
+      resp.on("data", (chunk) => {
+        data += chunk;
+      });
+
+      resp.on("end", () => {
+        console.log(JSON.parse(data));
+      });
     });
 
+    if (options.body) {
+      request.write(options.body);
+    }
+
+    request.joinDuplicateHeaders = false;
     request.on("error", (e) => {
       console.error(e);
       reject(e);
@@ -83,7 +102,7 @@ const getTomorrowsTariffs = async () => {
     {
       hostname: "api.octopus.energy",
       port: 443,
-      path: "/v1/products/AGILE-18-02-21/electricity-tariffs/E-1R-AGILE-18-02-21-C/standard-unit-rates/",
+      path: "/v1/products/AGILE-FLEX-22-11-25/electricity-tariffs/E-1R-AGILE-FLEX-22-11-25-C/standard-unit-rates/",
       method: "GET",
     },
     true
@@ -100,6 +119,8 @@ const getCheapestTariffs = (tariffs) => {
 };
 
 const loginToGrowatt = async () => {
+  const passwordCrc = md5(process.env.PASSWORD);
+  var body = `account=${process.env.USERNAME}&passwordCrc=${passwordCrc}&isReadPact=0`;
   const cookies = await makeHttpRequestForCookies({
     hostname: "server.growatt.com",
     port: 443,
@@ -108,7 +129,7 @@ const loginToGrowatt = async () => {
     headers: {
       "content-type": "application/x-www-form-urlencoded",
     },
-    body: `userName=${process.env.USERNAME}&password=${process.env.PASSWORD}&validateCode=&isReadPact=0`,
+    body,
   });
   return cookies;
 };
@@ -198,10 +219,13 @@ export const run = async () => {
     return;
   }
   const cookies = await loginToGrowatt();
-  await updateBatteryTime1(cheapestTariffs.slice(0, 3), cookies);
-  await updateBatteryTime2(
+  var response = await updateBatteryTime1(cheapestTariffs.slice(0, 3), cookies);
+  console.log(JSON.stringify(response, null, 2));
+  var response2 = await updateBatteryTime2(
     cheapestTariffs.slice(3, cheapestTariffs.length),
     cookies
   );
+  console.log(JSON.stringify(response2, null, 2));
+  console.log("end");
   return cheapestTariffs;
 };
